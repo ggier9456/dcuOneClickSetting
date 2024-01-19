@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<!-- saved from url=(0033)https://prototype.iets.cloud/dcu/ -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DCU 設定</title>
+
+    <!-- 引入Bootstrap CSS -->
+    <link rel="stylesheet" href="./bootstrap.min.css">
+<script src="chrome-extension://mooikfkahbdckldjjndioackbalphokd/assets/prompt.js"></script>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <span class="navbar-brand">DCU 一鍵設定</span>
+        </nav>
+    </header>
+
+    <main>
+        <a href="javascript:set_dcu(); async function set_dcu() {     var str = prompt(&quot;請輸入config&quot;);     const config = JSON.parse(str);      var authorization = localStorage.getItem(&quot;token&quot;);     authorization = authorization.replace(/&quot;/g, &quot;&quot;);     console.log(&quot;authorization: &quot; + authorization);      const min = 1;     const max = 60000;     const randomNumber = Math.floor(Math.random() * (max - min + 1)) + min;      var prefix = &quot;84:F4:4C:01&quot;;     var regex = new RegExp(prefix + &quot;[0-9A-Fa-f:]+&quot;, &quot;g&quot;);      var elements = document.getElementsByTagName(&quot;*&quot;);      outerLoop: for (var i = 0; i &lt; elements.length; i++) {         var element = elements[i];         var text = element.textContent;         var matches = text.match(regex);          if (matches) {             for (var j = 0; j &lt; matches.length; j++) {                 var fullString = matches[j];                 var hexValueWithColon = fullString.substr(fullString.length - 5);                 var hexValue = hexValueWithColon.replace(/:/g, &quot;&quot;);                 var panId = parseInt(hexValue, 16);                 console.log(&quot;轉換為十進制:&quot;, panId);                  if (panId) {                     break outerLoop;                 }             }         }          if (matches === null) {             alert(&quot;請至Interface頁面使用一鍵設定功能!&quot;);             break outerLoop;         }     }      if (config.port &amp;&amp; typeof panId !== &quot;undefined&quot;) {         alert(&quot;更新中，請稍候約1分鐘&quot;);          const mqtt_data = {             &quot;authEnabled&quot;: true,             &quot;authentication&quot;: {                 &quot;password&quot;: config.password,                 &quot;username&quot;: config.username             },             &quot;brokerIp&quot;: config.brokerIp,             &quot;brokerPort&quot;: config.port,             &quot;clientId&quot;: config.clientId,             &quot;encrypt&quot;: config.tls,             &quot;isCaFileExist&quot;: false,             &quot;isCertFileExist&quot;: false,             &quot;isKeyFileExist&quot;: false,             &quot;keepalive&quot;: config.keepalive,             &quot;passwd&quot;: config.mqtt_password,             &quot;tls&quot;: {}         };          var mqtt_url = &quot;/api/service/mqtt&quot;;         const mqtt_response = await fetch(mqtt_url, {             method: &quot;PUT&quot;,             headers: {                 &quot;Accept&quot;: &quot;application/json&quot;,                 &quot;Content-Type&quot;: &quot;application/json&quot;,                 &quot;Authorization&quot;: authorization,             },             body: JSON.stringify(mqtt_data),         });          const mqtt = await mqtt_response.text();         console.log(&quot;mqtt: &quot; + mqtt);          const root_data = {             &quot;networkId&quot;: &quot;CHT_AMI&quot;,             &quot;panId&quot;: panId,             &quot;frequency&quot;: &quot;&quot;,             &quot;ccaMode&quot;: 3,             &quot;ccaMax&quot;: -82,             &quot;ccaMin&quot;: -100,             &quot;securityMode&quot;: true,             &quot;preSharedKey&quot;: &quot;4f66625e21444a305738564b5a217376&quot;,             &quot;spacing&quot;: 200,             &quot;fixed&quot;: 18,             &quot;chNum&quot;: 19,             &quot;realPreSharedKey&quot;: &quot;Ofb^!DJ0W8VKZ!sv&quot;         };          var root_url = &quot;/api/net/setting/wisun/root&quot;;         const root_response = await fetch(root_url, {             method: &quot;PUT&quot;,             headers: {                 &quot;Accept&quot;: &quot;application/json&quot;,                 &quot;Content-Type&quot;: &quot;application/json&quot;,                 &quot;Authorization&quot;: authorization,             },             body: JSON.stringify(root_data),         });          const root = await root_response.text();         console.log(&quot;setting: &quot; + root);          const system_data = {             &quot;hostname&quot;: config.hostname,             &quot;language&quot;: 1,             &quot;modelId&quot;: config.modelId,             &quot;modelNumber&quot;: &quot;VW1C01CH01&quot;,             &quot;ntpEnabled&quot;: true,             &quot;ntpServerEnabled&quot;: true,             &quot;ntpServers&quot;: [                 config.ntp1,                 config.ntp2,                 &quot;2.pool.ntp.org&quot;,                 &quot;3.pool.ntp.org&quot;             ],             &quot;serialNum&quot;: &quot;AD1124D00165&quot;,             &quot;sessionTime&quot;: 3600,             &quot;timezone&quot;: &quot;CST-8&quot;,             &quot;zonename&quot;: &quot;Asia/Taipei&quot;         };          var system_url = &quot;/api/system&quot;;         const system_response = await fetch(system_url, {             method: &quot;PUT&quot;,             headers: {                 &quot;Accept&quot;: &quot;application/json&quot;,                 &quot;Content-Type&quot;: &quot;application/json&quot;,                 &quot;Authorization&quot;: authorization,             },             body: JSON.stringify(system_data),         });          const system = await system_response.text();         console.log(&quot;system: &quot; + system);          const network_data = {             &quot;lan&quot;: {                 &quot;dns&quot;: &quot;10.3.1.10&quot;,                 &quot;gateway&quot;: &quot;192.168.101.1&quot;,                 &quot;ip&quot;: &quot;192.168.101.1&quot;,                 &quot;netmask&quot;: &quot;255.255.255.0&quot;,                 &quot;proto&quot;: &quot;static&quot;             },             &quot;vwan&quot;: {                 &quot;interface&quot;: config.interface ?? &quot;mobile&quot;,                 &quot;internet&quot;: &quot;auto&quot;,                 &quot;vwanType&quot;: config.interfaceName ?? &quot;&quot;,                 &quot;protocol&quot;: config.protocol ?? &quot;&quot;,                 &quot;dnsServers&quot;: config.firstDns ? [                     config.firstDns,                     config.secondDns                 ] : [&quot;&quot;],                 &quot;mtu&quot;: 0,                 &quot;ipAddress&quot;: config.wanIpAddress ?? &quot;&quot;,                 &quot;netmask&quot;: config.wanNetmask ?? &quot;&quot;,                 &quot;gateway&quot;: config.wanGateway ?? &quot;&quot;,                 &quot;apnName&quot;: config.apnName ?? &quot;&quot;,                 &quot;apnUsername&quot;: &quot;&quot;,                 &quot;apnType&quot;: &quot;none&quot;,                 &quot;apnPassword&quot;: &quot;&quot;,                 &quot;isAutoAPN&quot;: config.auto ?? &quot;&quot;             }         };          var network_url = &quot;/api/network/interface/config&quot;;         const network_response = await fetch(network_url, {             method: &quot;PUT&quot;,             headers: {                 &quot;Accept&quot;: &quot;application/json&quot;,                 &quot;Content-Type&quot;: &quot;application/json&quot;,                 &quot;Authorization&quot;: authorization,             },             body: JSON.stringify(network_data),         });          const network = await network_response.text();         console.log(&quot;network: &quot; + network);          alert(&quot;設定完成&quot;);     } }" class="pl-5">DCU設定</a>
+        <p>請將上方連結拖拉到書籤列</p>
+        <div class="form-group mb-3">
+            <form id="configForm">
+                <div class="row">
+                    <div class="row col-8">
+                        <div class="col-3">
+                            <div class="form-group">
+                                <label class="form-check-label" for="adslRadio">
+                                   <span class="text-danger">*</span> Hostname
+                                </label>
+                                <input type="text" class="form-control" id="hostname" name="hostname" placeholder=" Hostname" required="" autocomplete="off">
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="form-check form-check-inline">
+                                <label class="form-check-label">
+                                    <span class="text-danger">*</span>請選擇DCU FW版本
+                                </label>
+                                <select class="form-control form-select col-8" name="DCU-FW" id="DCU-FW">
+                                    <option value="">請選擇</option>
+                                    <option value="1">Build #1 or Build #7</option>
+                                    <option value="10">Build #10以上</option>
+                                </select>
+                            </div>
+                        </div>
+                     
+                       
+                        
+                    </div>
+                    <div class="row col-8 pt-2">
+                        <div class="col-2">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="connectionType" id="mobileRadio" value="Mobile" required="">
+                                <label class="form-check-label" for="mobileRadio">
+                                    Mobile
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-2">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="connectionType" id="adslRadio" value="ADSL" required="">
+                                <label class="form-check-label" for="adslRadio">
+                                    ADSL
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row col-12 pt-2" id="mobileConfig" style="display: none">
+                        <div class="col-8 row">
+                            <div class="col-2">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="autoType" id="autoRadio" value="1" required="">
+                                    <label class="form-check-label" for="autoRadio">
+                                        自動
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-2">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="autoType" id="manualRadio" value="0" required="">
+                                    <label class="form-check-label" for="manualRadio">
+                                        手動
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-4" id="manualConfig" style="display: none">
+                                <div class="row">
+                                    <label class="form-check-label col-4">
+                                        地區
+                                    </label>
+                                    <select class="form-control form-select col-8" name="area" id="area">
+                                        <option value="ami.lte115">北南</option>
+                                        <option value="ami.lte105">台中</option>
+                                        <option value="ami.lte106">彰化</option>
+                                        <option value="ami.lte120">雲林</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row col-12 pt-2" id="adslConfig" style="display: none">
+                        <div class="col-6">
+                            <div class="form-group">
+                                <input type="text" class="form-control" name="wanIpAddress" placeholder="WAN IP Address" required="">
+                            </div>
+                            <div class="form-group">
+                                <input type="text" class="form-control" name="wanNetmask" placeholder="WAN Netmask" required="">
+                            </div>
+                            <div class="form-group">
+                                <input type="text" class="form-control" name="wanGateway" placeholder="WAN Gateway" required="">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 pt-3">
+                        <button type="submit" class="btn btn-primary ml-2" id="submitBtn">送出</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <p>config 格式：</p>
+        <pre id="configJson" class="border p-2">{
+    "clientId": "",
+    "port": "1883",
+    "keepalive": "60",
+    "mqtt_password": "guest",
+    "tls": false,
+    "username": "guest",
+    "password": "guest"
+}
+        </pre>
+    </main>
+</div>
+
+<!-- 引入Bootstrap JavaScript -->
+<script src="./DCU 設定_files/jquery-3.5.1.slim.min.js.下載"></script>
+<script src="./DCU 設定_files/popper.min.js.下載"></script>
+<script src="./DCU 設定_files/bootstrap.min.js.下載"></script>
+<script>
+    // 監聽Mobile選項的變化
+    document.getElementById("mobileRadio").addEventListener("change", function() {
+        if (this.checked) {
+            // Mobile選項被選中，隱藏附加的輸入框並重設JSON資料
+            resetConfigJson();
+            document.getElementById("adslConfig").style.display = "none";
+            document.getElementById("mobileConfig").style.display = "block";
+        }
+    });
+
+    // 監聽ADSL選項的變化
+    document.getElementById("adslRadio").addEventListener("change", function() {
+        if (this.checked) {
+            // ADSL選項被選中，顯示附加的輸入框
+            document.getElementById("adslConfig").style.display = "block";
+            document.getElementById("mobileConfig").style.display = "none";
+        }
+    });
+
+    // 監聽Auto選項的變化
+    document.getElementById("manualRadio").addEventListener("change", function() {
+        if (this.checked) {
+            // ADSL選項被選中，顯示附加的輸入框
+            document.getElementById("manualConfig").style.display = "block";
+        }
+    });
+    document.getElementById("autoRadio").addEventListener("change", function() {
+        if (this.checked) {
+            // ADSL選項被選中，顯示附加的輸入框
+            document.getElementById("manualConfig").style.display = "none";
+        }
+    });
+
+    // 監聽"送出"按鈕的點擊
+    document.getElementById("submitBtn").addEventListener("click", function(e) {
+        e.preventDefault();
+        const configJson = JSON.parse(document.getElementById("configJson").textContent);
+
+        var hostname = document.getElementById("hostname");
+        var hostnameRegex = /^.{10}-.{6}$/; //hostname格式的正則表達式
+        var DCUFW = document.getElementById("DCU-FW");
+
+        if(hostname.value == "") {
+            alert("請輸入Hostname(General頁面的主機名稱)");
+            return;
+        }
+        if(!hostnameRegex.test(hostname.value)) {
+            alert("Hostname不符合格式");
+            return;
+        }
+
+        var modelId = hostname.value.split("-")[0]; //擷取hostname中的modelId(-之前的字串)
+
+        if(DCUFW.value == ""){
+            alert("請輸入DCU FW！ 可至System頁面查看");
+            return;
+        }
+
+        if (!document.getElementById("mobileRadio").checked && !document.getElementById("adslRadio").checked) {
+            alert("請點選設定項目");
+            return; // 防止提交表單
+        }
+
+        if (!document.getElementById("autoRadio").checked && !document.getElementById("manualRadio").checked) {
+            alert("請點選設定項目");
+            return; // 防止提交表單
+        }
+
+       
+
+        if (document.getElementById("adslRadio").checked) {
+            // ADSL選項被選中，進行驗證
+            const wanIpAddress = document.querySelector('input[name="wanIpAddress"]').value;
+            const wanNetmask = document.querySelector('input[name="wanNetmask"]').value;
+            const wanGateway = document.querySelector('input[name="wanGateway"]').value;
+
+            var ipPattern = /^(\d{1,3}\.){3}\d{1,3}$/; // 正則表達式用於驗證 IP 地址格式
+            var inputs = document.querySelectorAll('#adslConfig input[type="text"]');
+
+            for (const input of inputs) {
+                var inputValue = input.value;
+                if (!ipPattern.test(inputValue) || inputValue == "") {
+                    input.value = ""; // 清空輸入框的值
+                    alert("請輸入有效的 IP 地址");
+                    return; // 防止提交表單
+                }
+            };
+            
+            if (wanIpAddress && wanNetmask && wanGateway) {
+                // 驗證通過，將值添加到config JSON 中
+                configJson.interface = "ethernet";
+                configJson.interfaceName = "v-wan";
+                configJson.protocol = "static";
+                configJson.firstDns = "10.3.1.10";
+                configJson.secondDns = "10.4.1.10";
+                configJson.wanIpAddress = wanIpAddress;
+                configJson.wanNetmask = wanNetmask;
+                configJson.wanGateway = wanGateway;
+                configJson.hostname = hostname.value;
+                configJson.modelId = modelId;
+                configJson.brokerIp = (DCUFW.value === "1") ? "10.3.1.111" : "ami.iisi.net";
+                configJson.ntp1 = (DCUFW.value === "1") ? "10.3.20.1" : "ntp1.iisi.net ";
+                configJson.ntp2 = (DCUFW.value === "1") ? "10.4.20.1" : "ntp2.iisi.net ";
+                document.getElementById("configJson").textContent = JSON.stringify(configJson, null, 4);
+            }
+        }
+
+        if(!document.getElementById("autoRadio").checked){
+            configJson.auto = false;
+            configJson.apnName = document.getElementById('area').value;
+            configJson.firstDns = "10.3.1.10";
+            configJson.secondDns = "10.4.1.10";
+            configJson.hostname = hostname.value;
+            configJson.modelId = modelId;
+            configJson.brokerIp = (DCUFW.value === "1") ? "10.3.1.111" : "ami.iisi.net";
+            configJson.ntp1 = (DCUFW.value === "1") ? "10.3.20.1" : "ntp1.iisi.net ";
+            configJson.ntp2 = (DCUFW.value === "1") ? "10.4.20.1" : "ntp2.iisi.net ";
+        }
+        else{
+            configJson.auto = true;
+            configJson.apnName = "";
+            configJson.firstDns = "10.3.1.10";
+            configJson.secondDns = "10.4.1.10";
+            configJson.hostname = hostname.value;
+            configJson.modelId = modelId;
+            configJson.brokerIp = (DCUFW.value === "1") ? "10.3.1.111" : "ami.iisi.net";
+            configJson.ntp1 = (DCUFW.value === "1") ? "10.3.20.1" : "ntp1.iisi.net ";
+            configJson.ntp2 = (DCUFW.value === "1") ? "10.4.20.1" : "ntp2.iisi.net ";
+        }
+        document.getElementById("configJson").textContent = JSON.stringify(configJson, null, 4);
+        copyToClipboard(JSON.stringify(configJson, null, 4));
+        alert("設定已複製到剪貼簿！");
+    });
+
+    function copyToClipboard(text) {
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+    }
+    function resetConfigJson() {
+        // 重設configJson為預設值
+        const defaultConfigJson = {
+            "clientId": "",
+            "port": "1883",
+            "keepalive": "60",
+            "mqtt_password": "guest",
+            "tls": false,
+            "username": "guest",
+            "password": "guest"
+        };
+        document.getElementById("configJson").textContent = JSON.stringify(defaultConfigJson, null, 4);
+    }
+</script>
+
+
+
+</body></html>
